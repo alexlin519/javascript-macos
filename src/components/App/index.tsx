@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-comment-textnodes */
 import './index.scss';
 
 import React from 'react';
@@ -8,6 +9,7 @@ import Main from '../Main';
 
 const App: React.FC = (): JSX.Element => (
     <div className="App">
+        //展示的内容
         <Header />
         <Main />
         <Dock />

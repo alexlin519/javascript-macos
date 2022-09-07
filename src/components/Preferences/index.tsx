@@ -15,14 +15,15 @@ import Icon from '../../lib/Icon';
 import { useModal } from '../../lib/Modal/UseModal';
 import { AppState, DockConfig, DockPosition } from '../Dock/types';
 
-interface PreferencesProps {
+//preference的设置 主体是dock 所以要前2个
+interface PreferencesProps { //由parent component传递的
     dockConfig: DockConfig;
     setDockConfig: React.Dispatch<React.SetStateAction<DockConfig>>;
     preferencesState: AppState;
     setPreferencesState: React.Dispatch<React.SetStateAction<AppState>>;
 }
 
-interface SliderConfig {
+interface SliderConfig { //滑动条
     title: string;
     value: number;
     maxValue: number;
@@ -44,7 +45,7 @@ const CHANGE_DOCK_DISTANCE_TO_SCREEN_EDGE =
 const CHANGE_DOCK_POSITION = 'Dock position';
 
 const Preferences: React.FC<PreferencesProps> = (props: PreferencesProps) => {
-    const { open, close, RenderModal } = useModal('PreferencesView');
+    const { open, close, RenderModal } = useModal('PreferencesView'); //distract objects
     const { dockConfig, setDockConfig, preferencesState, setPreferencesState } =
         props;
     const sliders: SliderConfig[] = [
@@ -116,7 +117,7 @@ const Preferences: React.FC<PreferencesProps> = (props: PreferencesProps) => {
                         value={slider.value}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>): void => {
                             handleSliderChange(
-                                parseInt(e.target.value),
+                                parseInt(e.target.value), //string 变 number
                                 slider.title
                             );
                         }}
@@ -134,12 +135,12 @@ const Preferences: React.FC<PreferencesProps> = (props: PreferencesProps) => {
                 height: 466,
                 id: 'PreferencesView',
                 moveId: 'PreferencesMove',
-                isShow: preferencesState === AppState.RUNNING_IN_FOREGROUND,
+                isShow: preferencesState === AppState.RUNNING_IN_FOREGROUND, //preference 设置是否在前台运行
             }}
         >
             <React.Fragment>
                 <TitleBar
-                    id="PreferencesMove"
+                    id="PreferencesMove" //移动的时候是在改变titleBar  所以和moveId: 'PreferencesMove' 一样
                     controls
                     inset
                     isFullscreen={false}
@@ -148,7 +149,7 @@ const Preferences: React.FC<PreferencesProps> = (props: PreferencesProps) => {
                         setPreferencesState(AppState.CLOSED);
                     }}
                     onMinimizeClick={(): void => {
-                        setPreferencesState(AppState.RUNNING_IN_BACKGROUND);
+                        setPreferencesState(AppState.RUNNING_IN_BACKGROUND); //后台运行
                     }}
                     onMaximizeClick={open}
                 />
@@ -195,20 +196,20 @@ const Preferences: React.FC<PreferencesProps> = (props: PreferencesProps) => {
                                         }
                                         key={index + dockPosition}
                                     >
-                                        <Radio
+                                        <Radio  //单选按钮
                                             label={dockPosition}
                                             name={dockPosition}
                                             onChange={(
-                                                e: React.ChangeEvent<HTMLInputElement>
+                                                e: React.ChangeEvent<HTMLInputElement> //radio是外部的标签  故我们的e要写type (ts没法自动识别)
                                             ): void => {
                                                 setDockConfig({
                                                     ...dockConfig,
                                                     position: e.target
-                                                        .value as DockPosition,
+                                                        .value as DockPosition, //把普通string 变成 DockPosition 的type
                                                 });
                                             }}
                                             defaultValue={dockPosition}
-                                            defaultChecked={
+                                            defaultChecked={ //打勾的情况只有相同的时候
                                                 dockPosition === dockConfig.position
                                             }
                                         />

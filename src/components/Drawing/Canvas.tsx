@@ -15,10 +15,11 @@ import Icon from '../../lib/Icon';
 import useDialog from '../Dialog';
 import { AppState } from '../Dock/types';
 
+//Canvas 在drawing index文件里面, drawingRef就指向canvas parent component(在index)
 interface CanvasProps {
     width: number;
     height: number;
-    drawingRef: any;
+    drawingRef: any; //最好不用any
     drawingState: AppState;
     setDrawingState: React.Dispatch<React.SetStateAction<AppState>>;
 }
@@ -41,15 +42,15 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const undoButtonRef = useRef<SVGSVGElement>(null);
     const redoButtonRef = useRef<SVGSVGElement>(null);
-    const [strokeStyle, setStrokeStyle] = useState('black');
+    const [strokeStyle, setStrokeStyle] = useState('black'); //和html canvas api的命名一样
     const [lineWidth, setLineWidth] = useState(5);
     const [eraserEnabled, setEraserEnabled] = useState(false);
     const [isDrawing, setIsDrawing] = useState(false);
     const [mousePosition, setMousePosition] = useState<Position | undefined>(
         undefined
     );
-    const [step, setStep] = useState(-1);
-    const [canvasHistory, setCanvasHistory] = useState<string[]>([]);
+    const [step, setStep] = useState(-1); //和redo功能有关
+    const [canvasHistory, setCanvasHistory] = useState<string[]>([]);//图像转变成string 储存在canvasHistory这个array
 
     const getCoordinates = (event: MouseEvent): Position | undefined => {
         if (!canvasRef.current) {
@@ -62,8 +63,8 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
     };
 
     const startDrawing = useCallback((event: MouseEvent) => {
-        const coordinates = getCoordinates(event);
-        if (coordinates) {
+        const coordinates = getCoordinates(event); //返回 Position | undefined
+        if (coordinates) { //不是undefined
             setMousePosition(coordinates);
             setIsDrawing(true);
         }
@@ -74,6 +75,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
             if (!canvasRef.current) {
                 return;
             }
+            //存在画板
             const canvas: HTMLCanvasElement = canvasRef.current;
             const context = canvas.getContext('2d');
             if (context) {
@@ -84,13 +86,13 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                 context.moveTo(originalMousePosition.x, originalMousePosition.y);
                 context.lineTo(newMousePosition.x, newMousePosition.y);
                 context.closePath();
-                context.stroke();
+                context.stroke(); // 有颜色
             }
         },
         [lineWidth, strokeStyle]
     );
 
-    interface ClearRectOptions {
+    interface ClearRectOptions { //规定矩形 清除范围
         x: number;
         y: number;
         width: number;
@@ -136,7 +138,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
             return;
         }
         const canvas: HTMLCanvasElement = canvasRef.current;
-        canvasHistory.push(canvas.toDataURL());
+        canvasHistory.push(canvas.toDataURL()); //canvas.toDataURL() 笔记转换成 string 然后push储存到canvasHistory
         setCanvasHistory(canvasHistory);
         if (!undoButtonRef.current || !redoButtonRef.current) {
             return;

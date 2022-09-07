@@ -26,9 +26,9 @@ const KEYS = [
 
 const KeyPad: React.FC = () => {
     const [keys, setKeys] = useState<string[]>(KEYS);
-    const [operands, setOperands] = useState({ operand1: '', operand2: '' });
+    const [operands, setOperands] = useState({ operand1: '', operand2: '' }); //运算符
     const [operator, setOperator] = useState('');
-    const [result, setResult] = useState('0'); // the displayed result
+    const [result, setResult] = useState('0'); // the displayed result计算器展示的内容
 
     // e.g. covert 70000000 to 7e+7
     // e.g. convert 0.0000007 to 7e-7
@@ -44,13 +44,13 @@ const KeyPad: React.FC = () => {
     // add new digit or decimal to one of the operands
     // remember to update result
     const addNewDigitToOperand = useCallback(
-        (operand: 'operand1' | 'operand2', newDigit: string): void => {
+        (operand: 'operand1' | 'operand2', newDigit: string): void => { //operand的type只能是二者之一
             const updatedOperands = {
                 operand1:
                     operand === 'operand1' &&
-                    (operands[operand] !== '0' || newDigit === '.')
-                        ? operands[operand] + newDigit
-                        : operands.operand1,
+                    (operands[operand] !== '0' || newDigit === '.') //operands[operand]  方括号 是读取obj的field的方式, operands[name] operands[id], 当可能要读取name或者id时 用 operands[变量x]  类似array[index]
+                        ? operands[operand] + newDigit //满足  就加上新digit
+                        : operands.operand1, //不满足  就不改变
                 operand2:
                     operand === 'operand2' &&
                     (operands[operand] !== '0' || newDigit === '.')
@@ -59,9 +59,9 @@ const KeyPad: React.FC = () => {
             };
             setOperands(updatedOperands);
             setResult(
-                updatedOperands[operand].length > 6
+                updatedOperands[operand].length > 6  //决定是否用科学计数法
                     ? convertToScientificNotation(
-                          parseFloat(updatedOperands[operand]).toPrecision(6)
+                          parseFloat(updatedOperands[operand]).toPrecision(6) //变成float 精度 6
                       )
                     : updatedOperands[operand]
             );
@@ -69,6 +69,7 @@ const KeyPad: React.FC = () => {
         [operands]
     );
 
+    //结果计算
     const evaluateResult = useCallback(
         (operand1: string, operand2: string, operator: string): string => {
             const parsedOperand1: number = parseFloat(operand1);
@@ -86,7 +87,7 @@ const KeyPad: React.FC = () => {
                 }
                 return (parsedOperand1 / parsedOperand2).toPrecision(6);
             } else if (operator === '+/-') {
-                return (-(parsedResult || parsedOperand1) || 0).toPrecision(6);
+                return (-(parsedResult || parsedOperand1) || 0).toPrecision(6); // 直接把result加负号 或者  没有result (只有一个数) 这个数加负号 或者 0
             } else if (operator === '%') {
                 return ((parsedResult || parsedOperand1) / 100 || 0).toPrecision(6);
             }
@@ -97,16 +98,16 @@ const KeyPad: React.FC = () => {
 
     const handleClickButton = useCallback(
         event => {
-            if (event.target instanceof HTMLButtonElement) {
+            if (event.target instanceof HTMLButtonElement) { //有无button触发
                 const buttonText = event.target.textContent;
-                if ('0123456789.'.indexOf(buttonText) >= 0) {
-                    const keys = [...KEYS];
+                if ('0123456789.'.indexOf(buttonText) >= 0) { //还有小数点  '0123456789.'.indexOf(buttonText) >= 0  巧妙找包含
+                    const keys = [...KEYS]; //spread operator  想传递固定array  用keys = [...KEYS] 而不是 keys = KEYS
                     keys.shift();
-                    keys.unshift('C');
+                    keys.unshift('C'); //不要AC 变成C
                     setKeys(keys);
                     operator
-                        ? addNewDigitToOperand('operand2', buttonText)
-                        : addNewDigitToOperand('operand1', buttonText);
+                        ? addNewDigitToOperand('operand2', buttonText) //按了1
+                        : addNewDigitToOperand('operand1', buttonText); //没按1
                 } else if ('+-×÷'.indexOf(buttonText) >= 0) {
                     setOperands({
                         operand1: operands.operand1 ? operands.operand1 : result,
@@ -127,7 +128,7 @@ const KeyPad: React.FC = () => {
                         setOperands({ operand1: '', operand2: '' });
                         setOperator('');
                     }
-                } else if (buttonText === 'C') {
+                } else if (buttonText === 'C') { //清空
                     setResult('0');
                     setOperands({ operand1: '', operand2: '' });
                     setOperator('');
@@ -141,12 +142,12 @@ const KeyPad: React.FC = () => {
                                 buttonText
                             )
                         );
-                        const updatedOperands = operands.operand2
+                        const updatedOperands = operands.operand2 //第二个operand有没有
                             ? {
-                                  operand1: operands.operand1,
+                                  operand1: operands.operand1, // 8 +  -2  我们在2按 +/-
                                   operand2: updatedResult,
                               }
-                            : { operand1: updatedResult, operand2: '' };
+                            : { operand1: updatedResult, operand2: '' }; //没有 直接空  eg只按了8  %后, o1 变成0.08 即result
                         setOperands(updatedOperands);
                         setResult(updatedResult);
                     }
@@ -155,6 +156,8 @@ const KeyPad: React.FC = () => {
         },
         [operator, operands, result, addNewDigitToOperand, evaluateResult]
     );
+
+    //实时更新result  触发render
     useEffect(() => setResult(result), [result]);
 
     return (
@@ -171,7 +174,7 @@ const KeyPad: React.FC = () => {
                             className={
                                 [0, 1, 2].includes(index)
                                     ? 'dark button text-'
-                                    : [3, 7, 11, 15, 18].includes(index)
+                                    : [3, 7, 11, 15, 18].includes(index) //多层 bool ():()
                                     ? 'orange button text-'
                                     : 'button text-' + text
                             }

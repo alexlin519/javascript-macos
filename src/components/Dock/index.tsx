@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-comment-textnodes */
 /* eslint-disable max-lines */
 import './index.scss';
 
@@ -24,10 +25,19 @@ import Preferences from '../Preferences';
 import { AppState, DockConfig, DockPosition } from './types';
 /// <reference path="image.d.ts" />
 
+
+// Dock是苹果的底部菜单栏
 const Dock: React.FC = () => {
     const DEFAULT_LENGTH = 68;
-    const BOUNCE_ANIMATION_DURATION = 1.5 * 1000;
-    const dockRef = useRef<HTMLDivElement>(null);
+    const BOUNCE_ANIMATION_DURATION = 1.5 * 1000; //点击应用后多久跳出来1.5毫秒
+    const dockRef = useRef<HTMLDivElement>(null); // 修改status的 ref
+    //性能优化: array是 non-premetive type (占用空间较大)
+    //每次re render的时候都要运行const Dock: React.FC, 每次都要分配一个array 占空间
+    //所以 const dockIcons = { FinderIcon ... } 耗时间 空间, 而且array是固定的
+    //
+    // ract 提供了 useMemo 函数, 2个参数 返回我们array的函数 和一个dependency array[], dependency array的东西变化后 重新执行返回我们array的函数
+    //这个情况, 我们array 不变 故dependency array[]是空
+    //memoization: remember previously calculated value and avoid recomputation
     const dockIcons = useMemo(() => {
         return [
             FinderIcon,
@@ -39,13 +49,13 @@ const Dock: React.FC = () => {
             DrawingIcon,
         ];
     }, []);
-    const [dockConfig, setDockConfig] = useState<DockConfig>({
+    const [dockConfig, setDockConfig] = useState<DockConfig>({ //useState<status类型>()  , 之前 useState<boolean>(false), 可以省略Boolean
         position: DockPosition.BOTTOM,
         iconSize: DEFAULT_LENGTH,
         bigIconSize: DEFAULT_LENGTH * 1.5,
         distanceBetweenIcons: 0,
-        distanceToScreenEdge: 5,
-        style: {},
+        distanceToScreenEdge: 5, // type不对会报错
+        style: {}, //没有style 会报错 因为我们status类型是DockConfig   避免object property写少
     });
     const [preferencesState, setPreferencesState] = useState<AppState>(
         AppState.CLOSED
@@ -56,14 +66,18 @@ const Dock: React.FC = () => {
     const [drawingState, setDrawingState] = useState<AppState>(AppState.CLOSED);
     const [showLaunchpad, setShowLaunchPad] = useState(false);
 
+    //点击图标后做的事情
+    //也是个memoization,这回hook 不是useMemo (一般变量用这个)  函数用 useCallback这个hook
+    //2个参数 一个函数  一个dependency list
     const handleDockIconClick = useCallback(
-        (iconName: string) => {
+        (iconName: string) => { //判断点击的是哪个icon
             if (!dockRef || !dockRef.current) {
                 return;
             }
+            //
             const iconElements = dockRef.current.childNodes;
-            const iconIndex = dockIcons.indexOf(iconName);
-            const clickedIconElement = iconElements[iconIndex] as HTMLDivElement;
+            const iconIndex = dockIcons.indexOf(iconName);//点击的icon对应的index
+            const clickedIconElement = iconElements[iconIndex] as HTMLDivElement;//类型转换 为了clickedIconElement.classList.add('bounce');  div元素 存在classlist这个property
             if (iconName === ChromeIcon) {
                 window.open('http://www.google.com/');
                 return;
@@ -72,8 +86,8 @@ const Dock: React.FC = () => {
                 iconName === CalculatorIcon ||
                 iconName === DrawingIcon
             ) {
-                setShowLaunchPad(false);
-                let appState: AppState = preferencesState;
+                setShowLaunchPad(false); //关掉pad
+                let appState: AppState = preferencesState; //初始随便给一个preferencesState  但是我们要判断我们icon点的是PreferencesIcon 还是计算器icon 还是画画
                 let setAppState: typeof setPreferencesState = setPreferencesState;
                 switch (iconName) {
                     case PreferencesIcon:
@@ -89,9 +103,10 @@ const Dock: React.FC = () => {
                         setAppState = setDrawingState;
                         break;
                 }
+                //
                 if (appState === AppState.CLOSED) {
                     clickedIconElement.classList.add('bounce');
-                    setTimeout(() => {
+                    setTimeout(() => { //延迟等待后 set status
                         setAppState(AppState.RUNNING_IN_FOREGROUND);
                         clickedIconElement.classList.remove('bounce');
                     }, BOUNCE_ANIMATION_DURATION);
@@ -114,6 +129,7 @@ const Dock: React.FC = () => {
         ]
     );
 
+
     const computeOffset = useCallback(
         (element: HTMLElement, offset: 'top' | 'left'): number => {
             const elementOffset =
@@ -128,7 +144,7 @@ const Dock: React.FC = () => {
         },
         []
     );
-
+    //鼠标滑动后 放大
     const handleMousemove = useCallback(
         event => {
             const { clientX, clientY } = event;
@@ -224,6 +240,8 @@ const Dock: React.FC = () => {
                 dockConfig.iconSize + 'px';
         }
     }, [dockConfig]);
+
+    //什么时候重新运行setInitialPosition
     // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(setInitialPosition, [
         dockConfig.position,
@@ -233,6 +251,7 @@ const Dock: React.FC = () => {
         dockConfig.distanceToScreenEdge,
     ]);
 
+    //让打开的app 底下有点
     const labelRunningAppIcons = (): void => {
         if (!dockRef || !dockRef.current) {
             return;
@@ -249,10 +268,10 @@ const Dock: React.FC = () => {
         ] as HTMLDivElement;
         const drawingIconElement = iconElements[drawingIndex] as HTMLDivElement;
         if (preferencesState !== AppState.CLOSED) {
-            preferencesIconElement.classList.add('active');
+            preferencesIconElement.classList.add('active'); //打开的app 那底下就加点
         } else {
             setTimeout(
-                () => preferencesIconElement.classList.remove('active'),
+                () => preferencesIconElement.classList.remove('active'), //关闭app 点就延时消失
                 0.5 * 1000
             );
         }
@@ -273,7 +292,7 @@ const Dock: React.FC = () => {
             );
         }
     };
-
+    //什么时候重新运行labelRunningAppIcons
     useEffect(labelRunningAppIcons, [
         calculatorState,
         dockIcons,
@@ -294,7 +313,7 @@ const Dock: React.FC = () => {
               };
     }, [dockConfig]);
 
-    return (
+    return ( //只能return一个jsx  但是我们有多个 所以用 <React.Fragment>包起来
         <React.Fragment>
             <Preferences
                 dockConfig={dockConfig}
@@ -312,6 +331,7 @@ const Dock: React.FC = () => {
                 setShowLaunchPad={setShowLaunchPad}
                 handleDockIconClick={handleDockIconClick}
             />
+
             <footer className={dockConfig.position} id="AppFooter">
                 <div
                     id="Docker"
@@ -324,15 +344,15 @@ const Dock: React.FC = () => {
                     {dockIcons.map((item, index) => {
                         return (
                             <div
-                                className={
-                                    [
+                                className={ //bool ():()
+                                    [ //可以点击的一些app图标:
                                         LaunchpadIcon,
                                         PreferencesIcon,
                                         ChromeIcon,
                                         CalculatorIcon,
                                         DrawingIcon,
                                     ].includes(item)
-                                        ? 'pointer DockItem ' + dockConfig.position
+                                        ? 'pointer DockItem ' + dockConfig.position //光标形状变成手指
                                         : dockConfig.position + ' DockItem'
                                 }
                                 style={
@@ -344,7 +364,8 @@ const Dock: React.FC = () => {
                                         ...iconStyle,
                                     } as CSSProperties
                                 }
-                                key={index + item}
+                                // loop生成元素 通常要key
+                                key={index + item} // 要key 不然react很难分辨每个元素  之后render不方便
                                 onClick={(): void => handleDockIconClick(item)}
                             />
                         );

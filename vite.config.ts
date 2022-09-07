@@ -4,5 +4,5 @@ import { defineConfig } from 'vite';
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [reactRefresh()],
-    base: '/javascript-macos/'
+    base: 'alexlin519/javascript-macos/'
 });
