@@ -34,12 +34,12 @@ const Drawing: React.FC<DrawingProps> = (props: DrawingProps): JSX.Element => {
         if (isFullscreen) {
             setStyle({ width: 1000, height: 600 });
         } else {
-            setStyle({ width: -1, height: -1 });
+            setStyle({ width: -1, height: -1 }); //CSS 小技巧 -1 就是全屏
         }
         setFullscreen(!isFullscreen);
     }, [isFullscreen]);
 
-    const drawingRef = useRef<any>();
+    const drawingRef = useRef<any>(); //传给canvas!!
 
     return (
         <RenderModal
@@ -51,6 +51,8 @@ const Drawing: React.FC<DrawingProps> = (props: DrawingProps): JSX.Element => {
                 isShow: drawingState === AppState.RUNNING_IN_FOREGROUND,
             }}
         >
+
+
             <div className="drawing-wrapper">
                 <TitleBar
                     controls
@@ -67,6 +69,8 @@ const Drawing: React.FC<DrawingProps> = (props: DrawingProps): JSX.Element => {
                     onMaximizeClick={handleMaximizeClick}
                     onResizeClick={handleMaximizeClick}
                 />
+
+
                 <Canvas
                     drawingRef={drawingRef}
                     height={isFullscreen ? window.innerHeight - 32 : style.height}

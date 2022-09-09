@@ -1,3 +1,4 @@
+/* eslint-disable react/jsx-no-comment-textnodes */
 /* eslint-disable max-lines */
 import dayjs from 'dayjs';
 import React, {
@@ -123,7 +124,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                             height: lineWidth,
                         });
                     } else {
-                        drawLine(mousePosition, newMousePosition);
+                        drawLine(mousePosition, newMousePosition); //画笔 要起点和终点
                         setMousePosition(newMousePosition);
                     }
                 }
@@ -141,7 +142,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
         canvasHistory.push(canvas.toDataURL()); //canvas.toDataURL() 笔记转换成 string 然后push储存到canvasHistory
         setCanvasHistory(canvasHistory);
         if (!undoButtonRef.current || !redoButtonRef.current) {
-            return;
+            return; //和history相关操作时, 要这2个button在
         }
         const undoButton: SVGSVGElement = undoButtonRef.current;
         const redoButton: SVGSVGElement = redoButtonRef.current;
@@ -155,7 +156,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
         saveToHistory();
     }, [saveToHistory]);
 
-    const leaveCanvas = useCallback(() => {
+    const leaveCanvas = useCallback(() => {//光标移动到画布外
         setIsDrawing(false);
         setMousePosition(undefined);
     }, []);
@@ -170,32 +171,35 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
         canvas.addEventListener('mouseup', stopDrawing);
         canvas.addEventListener('mouseleave', leaveCanvas);
         return (): void => {
-            canvas.removeEventListener('mousedown', startDrawing);
+            canvas.removeEventListener('mousedown', startDrawing);//不画画了 就解绑
             canvas.removeEventListener('mousemove', handleMouseMove);
             canvas.removeEventListener('mouseup', stopDrawing);
             canvas.removeEventListener('mouseleave', leaveCanvas);
         };
     }, [startDrawing, handleMouseMove, stopDrawing, leaveCanvas]);
 
-    const [showToolbox, setShowToolbox] = useState(true);
+    const [showToolbox, setShowToolbox] = useState(true); //一开始工具栏是展开的
     const toggleToolboxOpen = useCallback(() => {
         setShowToolbox(!showToolbox);
     }, [showToolbox]);
 
-    const handleToolClick = useCallback((e, toolName) => {
+    const handleToolClick = useCallback((e, toolName:string) => { //点击橡皮或者画笔后
         const el = e.currentTarget;
-        if (el.classList[1]) return;
+        if (el === null){
+            return;
+        }
+        if (el.classList[1]) return; //就说明不是我们点的  (工具有个active边框 是另一个class) 我们点的时候假如有2个classlist 说明点在边框了 说明已经active了
         toolName === 'canvas_eraser'
             ? setEraserEnabled(true)
-            : setEraserEnabled(false);
+            : setEraserEnabled(false); //化简: setEraserEnabled(toolName === 'canvas_eraser')
         el.classList.add('active');
-        el.parentNode.childNodes.forEach((item: HTMLLIElement) => {
-            if (!item.matches('svg') || item === el) return;
-            item.classList.remove('active');
+        el.parentNode.childNodes.forEach((item: HTMLLIElement) => { //当前按钮和其他按钮
+            if (!item.matches('svg') || item === el) return; //不是按钮 /是刚刚的
+            item.classList.remove('active'); //因为 是画笔 有active框框, 同时让其他按钮没有active框框
         });
     }, []);
 
-    const handleSelectColor = useCallback(([e, selector, color]) => {
+    const handleSelectColor = useCallback(([e, selector, color]) => { //类似选工具  选颜色的有active效果:变大
         const el = e.target;
         if (el.className.includes('active')) return;
         setStrokeStyle(color);
@@ -206,11 +210,15 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
         });
     }, []);
 
+    //清空之前有对话框弹出
+    //close warning是关闭窗口的  还有一个是清空的  所以showCloseWarning一个bool就足矣
     const { openDialog, closeDialog, RenderDialog } = useDialog();
     const [showDialog, setShowDialog] = useState(false);
     const [showCloseWarning, setShowCloseWarning] = useState(false);
 
-    useImperativeHandle(drawingRef, () => ({
+    //创建hook: 把child component函数传给parent. 以此来用child控制parent component
+    //drawingCloseClick 连到 drawingRef, parent通过drawingRef 来call drawingCloseClick, 去处理画画关闭时的一系列事件
+    useImperativeHandle(drawingRef, () => ({ //第二个参数是函数, return  传给parent的函数
         drawingCloseClick: (): void => {
             if (step === -1) {
                 setDrawingState(AppState.CLOSED);
@@ -226,7 +234,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
         message: 'This action cannot be undone.',
     });
 
-    useEffect(() => {
+    useEffect(() => { //打开哪个对话框
         if (showCloseWarning) {
             if (!showDialog) {
                 setClearDialogText({
@@ -267,7 +275,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
             a.href = imageData;
             const timeFormat = 'MMM D, YYYY h:mm A'; // e.g. Aug 16, 2018 8:02 PM
             const timeStamp = dayjs().format(timeFormat);
-            a.download = `Saved Drawings ${timeStamp}`;
+            a.download = `Saved Drawings ${timeStamp}`; //保存文件时要自动命名 根据时间
             a.target = '_blank';
             a.click();
         }
@@ -291,10 +299,10 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                 if (type === 'undo' && step >= 0) {
                     currentStep = step - 1;
                     redoButton.classList.add('active');
-                    if (currentStep < 0) {
+                    if (currentStep < 0) {//没法继续undo了
                         undoButton.classList.remove('active');
                     }
-                } else if (type === 'redo' && step < canvasHistory.length - 1) {
+                } else if (type === 'redo' && step < canvasHistory.length - 1) { //canvasHistory.length - 1 才有可能前进
                     currentStep = step + 1;
                     undoButton.classList.add('active');
                     if (currentStep === canvasHistory.length - 1) {
@@ -303,9 +311,9 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                 } else {
                     return;
                 }
-                context.clearRect(0, 0, width, height);
+                context.clearRect(0, 0, width, height);  //前清空画布
                 const canvasImage = new Image();
-                canvasImage.src = canvasHistory[currentStep] as string;
+                canvasImage.src = canvasHistory[currentStep] as string; //找到历史 重新画出
                 canvasImage.addEventListener('load', () => {
                     context.drawImage(canvasImage, 0, 0);
                 });
@@ -315,7 +323,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
         [canvasHistory, step, width, height]
     );
 
-    const handleOptionClick = useCallback(
+    const handleOptionClick = useCallback( //4个 保存 清除 redo undo  点击后的 stater
         toolName => {
             switch (toolName) {
                 case 'canvas_clear':
@@ -343,7 +351,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
         }
     }, [setShowDialog, showCloseWarning, setShowCloseWarning]);
 
-    const handleConfirmDialog = useCallback(() => {
+    const handleConfirmDialog = useCallback(() => { //清空
         clearRect({
             x: 0,
             y: 0,
@@ -352,7 +360,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
         });
         setCanvasHistory([]);
         setStep(-1);
-        handleCancelDialog();
+        handleCancelDialog(); //
         if (!undoButtonRef.current || !redoButtonRef.current) {
             return;
         }
@@ -360,8 +368,8 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
         const redoButton: SVGSVGElement = redoButtonRef.current;
         undoButton.classList.remove('active');
         redoButton.classList.remove('active');
-        if (showCloseWarning) {
-            setDrawingState(AppState.CLOSED);
+        if (showCloseWarning) { //判断只是清除 还是点击关闭
+            setDrawingState(AppState.CLOSED); //关闭app
             setShowCloseWarning(false);
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -379,23 +387,26 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
     return (
         <React.Fragment>
             <canvas id="canvas" ref={canvasRef} height={height} width={width} />
-            <div
+            <div  //一个展开的箭头
                 id="toolbox-open"
                 style={
                     {
                         borderRadius: showToolbox ? null : 5,
                     } as CSSProperties
                 }
-            >
+            > //div 里面有箭头
                 <Icon
                     type={showToolbox ? 'icon-upward_flat' : 'icon-downward_flat'}
                     style={{
-                        width: '100%',
+                        width: '100%', //栏的全部宽度
                         fontSize: 32,
                     }}
-                    clickEvent={toggleToolboxOpen}
+                    clickEvent={toggleToolboxOpen} //展开的动画效果要用CSSTransition
                 />
             </div>
+
+
+
             <CSSTransition
                 in={showToolbox}
                 timeout={300}
@@ -404,7 +415,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
             >
                 <div id="toolbox">
                     <span>Options</span>
-                    <div className="options">
+                    <div className="options"> //四个option
                         {options.map((option, index) => {
                             return (
                                 <Icon
@@ -415,7 +426,7 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                                             ? undoButtonRef
                                             : undefined
                                     }
-                                    key={index + option}
+                                    key={index + option} //loop 给key
                                     className={option}
                                     type={'icon-' + option}
                                     style={{ fontSize: 50 }}
@@ -427,17 +438,19 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                         })}
                     </div>
                     <span>Toolbox</span>
-                    <div className="tools">
+
+
+                    <div className="tools"> //画笔和橡皮
                         {tools.map((tool, index) => {
                             return (
                                 <Icon
                                     key={index + tool}
                                     className={
                                         tool === 'canvas_eraser'
-                                            ? eraserEnabled
+                                            ? eraserEnabled //橡皮被打开了么
                                                 ? 'active'
-                                                : ''
-                                            : !eraserEnabled
+                                                : '' //橡皮没被打开 就啥不干
+                                            : !eraserEnabled //不是橡皮 就是画笔了
                                             ? 'active'
                                             : ''
                                     }
@@ -450,12 +463,14 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                             );
                         })}
                     </div>
+
+
                     <div className="sizes">
                         <input
                             style={
                                 {
                                     backgroundColor: eraserEnabled
-                                        ? '#ebeff4'
+                                        ? '#ebeff4' //橡皮颜色
                                         : strokeStyle,
                                 } as CSSProperties
                             }
@@ -464,13 +479,15 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                             name="range"
                             min="1"
                             max="20"
-                            value={lineWidth}
+                            value={lineWidth} //双向数据绑定  UI 的value 和react的 status 绑定 就是lineWidth
                             onChange={(e): void =>
-                                setLineWidth(parseInt(e.target.value))
+                                setLineWidth(parseInt(e.target.value)) //更改这个数据
                             }
                         />
                     </div>
-                    <ol className="colors">
+
+                    //颜色
+                    <ol className="colors"> //ol是 order list
                         {colors.map((color, index) => {
                             return (
                                 <li
@@ -495,6 +512,9 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                     </ol>
                 </div>
             </CSSTransition>
+
+
+
             <RenderDialog
                 width={300}
                 height={120}
@@ -505,6 +525,8 @@ const Canvas: React.FC<CanvasProps> = (props: CanvasProps): JSX.Element => {
                 onConfirm={handleConfirmDialog}
                 onCancel={handleCancelDialog}
             />
+
+
         </React.Fragment>
     );
 };
